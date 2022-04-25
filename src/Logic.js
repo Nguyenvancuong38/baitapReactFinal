@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Render from "./Render";
 import { useForm } from "react-hook-form";
-import axios from "axios";
+import { getAllUser, updateUser, addUser, deleteUser } from "./API/api.service";
 
 function Logic() {
   const {
@@ -16,21 +16,29 @@ function Logic() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(1);
 
+  // fetch All uers
+  const fetchAllUser = async () => {
+    const userList = await getAllUser();
+    setUsers(userList.data);
+  };
+
   // Call API get users
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const userList = await axios.get("http://localhost:8000/v1/user");
-        setUsers(userList.data);
+    fetchAllUser();
 
-        // console.log(userList.data);
-        console.log("get all successfully");
-      } catch (error) {
-        console.log("get fail", error);
-      }
-    };
+    // const fetchUsers = async () => {
+    //   try {
+    //     const userList = await axios.get("http://localhost:8000/v1/user");
+    //     setUsers(userList.data);
 
-    fetchUsers();
+    //     // console.log(userList.data);
+    //     console.log("get all successfully");
+    //   } catch (error) {
+    //     console.log("get fail", error);
+    //   }
+    // };
+
+    // fetchUsers();
   }, []);
 
   // Dialog delete
@@ -63,22 +71,16 @@ function Logic() {
   // Get users current
   const areUseSureDelete = async (choose) => {
     // userDialog.current._id
-    try {
-      if (choose) {
-        const dataDelete = await axios.delete(
-          `http://localhost:8000/v1/user/${userDialog.current._id}`
-        );
-        if (dataDelete.status === 200) {
-          const userList = await axios.get("http://localhost:8000/v1/user");
-          setUsers(userList.data);
-          handleDialog("", false);
-          console.log("delete successfully");
-        }
-      } else {
+
+    if (choose) {
+      const dataDelete = await deleteUser(userDialog);
+      if (dataDelete.status === 200) {
+        fetchAllUser();
         handleDialog("", false);
+        console.log("delete successfully");
       }
-    } catch (error) {
-      console.log("delete fail", error);
+    } else {
+      handleDialog("", false);
     }
   };
 
@@ -119,30 +121,27 @@ function Logic() {
   const handleSave = async (data) => {
     setFocus("fullName");
     if (show === false) {
-      console.log(thuTu.current);
-      const dataUpdate = await axios.put(
-        `http://localhost:8000/v1/user/${thuTu.current}`,
-        data
-      );
-      console.log(dataUpdate);
+      await updateUser(thuTu, data);
+
+      // const dataUpdate = await axios.put(
+      //   `http://localhost:8000/v1/user/${thuTu.current}`,
+      //   data
+      // );
 
       // users.splice(thuTu.current, 1, data);
       // setUsers([...users]);
 
       setShow(true);
     } else {
-      const dataSave = await axios.post("http://localhost:8000/v1/user/", data);
-      // console.log(dataSave);
-      // const userList = await axios.get("http://localhost:8000/v1/user");
-      // setUsers(userList.data);
-      // console.log(dataSave);
+      await addUser(data);
 
+      // const dataSave = await axios.post("http://localhost:8000/v1/user/", data);
       // setUsers((prev) => [...prev, data]);
     }
+    fetchAllUser();
 
-    const userList = await axios.get("http://localhost:8000/v1/user");
-    console.log(userList);
-    setUsers(userList.data);
+    // const userList = await axios.get("http://localhost:8000/v1/user");
+    // setUsers(userList.data);
 
     reset({
       fullName: "",
